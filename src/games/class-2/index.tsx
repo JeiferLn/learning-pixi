@@ -1,3 +1,5 @@
+// Drag and Drop
+
 import { useEffect, useRef } from "react";
 import * as PIXI from 'pixi.js'
 
@@ -10,7 +12,9 @@ export default function Class2() {
     let app: PIXI.Application;
     let resize: () => void;
 
-    let isDragging: boolean = false;
+    let dragTarget: PIXI.Sprite | null = null;
+    let dragOffset: PIXI.Point;
+
 
     useEffect(() => {
         if (!containerRef.current) return;
@@ -58,32 +62,29 @@ export default function Class2() {
             childrenSprite.eventMode = 'static';
 
             childrenSprite.on('pointerdown', (event) => {
-                isDragging = true;
+                dragTarget = childrenSprite;
 
                 const globalPos = event.global;
-                const localPos = childrenSprite.toLocal(globalPos);
 
-                const positionPivotX = childrenSprite.pivot.x + localPos.x;
-                const positionPivotY = childrenSprite.pivot.y + localPos.y;
-
-                childrenSprite.pivot.set(positionPivotX, positionPivotY);
+                dragOffset = new PIXI.Point(globalPos.x - childrenSprite.position.x, globalPos.y - childrenSprite.position.y);
             })
 
             childrenSprite.on('pointerup', () => {
-                isDragging = false;
-                childrenSprite.anchor.set(0.5);
+                dragTarget = null;
             })
 
             childrenSprite.on('pointerupoutside', () => {
-                isDragging = false;
-                childrenSprite.anchor.set(0.5);
+                dragTarget = null;
             })
 
-            childrenSprite.on('pointermove', (event) => {
-                if (isDragging) {
+            app.stage.eventMode = 'static';
+            app.stage.hitArea = app.screen;
+
+            app.stage.on('pointermove', (event) => {
+                if (dragTarget) {
                     const globalPos = event.global;
 
-                    childrenSprite.position.set(globalPos.x, globalPos.y);
+                    dragTarget.position.set(globalPos.x - dragOffset.x, globalPos.y - dragOffset.y);
                 }
             })
         }
