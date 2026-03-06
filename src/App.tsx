@@ -14,6 +14,7 @@ const Class9 = lazy(() => import('./games/class-9/index.tsx'))
 const Class10 = lazy(() => import('./games/class-10/index.tsx'));
 const Class11 = lazy(() => import('./games/class-11/index.tsx'));
 const Class12 = lazy(() => import('./games/class-12/index.tsx'));
+const GameSlot = lazy(() => import('./games/game-slot/index.tsx'));
 
 export default function App() {
   return (
@@ -33,6 +34,7 @@ export default function App() {
           <Route path="/class10" element={<Class10 />} />
           <Route path="/class11" element={<Class11 />} />
           <Route path="/class12" element={<Class12 />} />
+          <Route path="/game-slot" element={<GameSlot />} />
         </Routes>
       </Suspense>
     </BrowserRouter>

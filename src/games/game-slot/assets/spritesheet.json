@@ -1,0 +1,35 @@
+{
+	"frames": {
+		"symbol.png": {
+			"frame": {
+				"x": 0,
+				"y": 0,
+				"w": 4834,
+				"h": 3217
+			},
+			"rotated": false,
+			"trimmed": false,
+			"spriteSourceSize": {
+				"x": 0,
+				"y": 0,
+				"w": 4834,
+				"h": 3217
+			},
+			"sourceSize": {
+				"w": 4834,
+				"h": 3217
+			}
+		}
+	},
+	"meta": {
+		"app": "http://www.codeandweb.com/texturepacker",
+		"version": "1.0",
+		"image": "spritesheet.png",
+		"format": "RGBA8888",
+		"size": {
+			"w": 4834,
+			"h": 3217
+		},
+		"scale": "1"
+	}
+}
