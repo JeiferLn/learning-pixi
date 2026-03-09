@@ -1,16 +1,19 @@
 import * as PIXI from 'pixi.js';
 
+import { SymbolAtlas } from './SymbolAtlas';
+
 export class Symbol extends PIXI.Sprite {
     constructor() {
-        super(PIXI.Texture.WHITE);
+        super();
+    }
 
-        this.width = 150;
-        this.height = 150;
-
-        this.tint = 0xff0000;
+    setSymbol(symbolID: number) {
+        this.texture = SymbolAtlas.get(symbolID);
     }
 
     setRandom() {
-        this.tint = Math.random() * 0xFFFFFF;
+        const id = Math.floor(Math.random() * 12);
+
+        this.setSymbol(id);
     }
 }

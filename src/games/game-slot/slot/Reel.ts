@@ -28,7 +28,7 @@ export class Reel extends PIXI.Container {
 
     private createMask() {
         const width = this.symbolSize;
-        const height = this.rows * this.symbolSize - 450;
+        const height = this.rows * this.symbolSize - 410;
 
         // Crear textura con gradiente difuminado (transparente arriba y abajo)
         const canvas = document.createElement('canvas');
@@ -39,8 +39,8 @@ export class Reel extends PIXI.Container {
         const gradient = ctx.createLinearGradient(0, 0, 0, height);
         // 20% superior e inferior para el difuminado
         gradient.addColorStop(0, 'rgba(255,255,255,0)');
-        gradient.addColorStop(0.08, 'rgba(255,255,255,1)');
-        gradient.addColorStop(0.93, 'rgba(255,255,255,1)');
+        gradient.addColorStop(0.05, 'rgba(255,255,255,1)');
+        gradient.addColorStop(0.95, 'rgba(255,255,255,1)');
         gradient.addColorStop(1, 'rgba(255,255,255,0)');
 
         ctx.fillStyle = gradient;
@@ -49,7 +49,7 @@ export class Reel extends PIXI.Container {
         const texture = PIXI.Texture.from(canvas);
         const mask = new PIXI.Sprite(texture);
         mask.x = 0;
-        mask.y = 420;
+        mask.y = 390;
 
         this.addChild(mask);
 
@@ -61,6 +61,8 @@ export class Reel extends PIXI.Container {
             const symbol = new Symbol();
 
             symbol.y = i * this.symbolSize;
+
+            symbol.scale.set(0.25);
 
             this.symbols.push(symbol);
 
