@@ -5,6 +5,8 @@ import { Symbol } from './Symbol';
 export class Reel extends PIXI.Container {
     private symbols: Symbol[] = []
 
+    private symbolContainer = new PIXI.Container();
+
     private rows: number;
     private symbolSize: number;
 
@@ -17,7 +19,41 @@ export class Reel extends PIXI.Container {
         this.rows = rows;
         this.symbolSize = symbolSize;
 
+        this.createMask();
+
+        this.addChild(this.symbolContainer);
+
         this.createSymbols();
+    }
+
+    private createMask() {
+        const width = this.symbolSize;
+        const height = this.rows * this.symbolSize - 450;
+
+        // Crear textura con gradiente difuminado (transparente arriba y abajo)
+        const canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d')!;
+
+        const gradient = ctx.createLinearGradient(0, 0, 0, height);
+        // 20% superior e inferior para el difuminado
+        gradient.addColorStop(0, 'rgba(255,255,255,0)');
+        gradient.addColorStop(0.08, 'rgba(255,255,255,1)');
+        gradient.addColorStop(0.93, 'rgba(255,255,255,1)');
+        gradient.addColorStop(1, 'rgba(255,255,255,0)');
+
+        ctx.fillStyle = gradient;
+        ctx.fillRect(0, 0, width, height);
+
+        const texture = PIXI.Texture.from(canvas);
+        const mask = new PIXI.Sprite(texture);
+        mask.x = 0;
+        mask.y = 420;
+
+        this.addChild(mask);
+
+        this.symbolContainer.mask = mask;
     }
 
     private createSymbols() {
@@ -28,13 +64,14 @@ export class Reel extends PIXI.Container {
 
             this.symbols.push(symbol);
 
-            this.addChild(symbol);
+            this.symbolContainer.addChild(symbol);
         }
     }
 
     spin() {
+        // 3000
         this.speed = 100;
-        // 3000;
+        
         this.spinning = true;
     }
 

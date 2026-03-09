@@ -5,7 +5,7 @@ import { Reel } from './Reel';
 export class SlotMachine extends PIXI.Container {
     private reels: Reel[] = [];
 
-    private rows = 4;
+    private rows = 3;
     private cols = 5;
 
     private symbolSize = 220;
@@ -19,13 +19,11 @@ export class SlotMachine extends PIXI.Container {
 
     private createReels() {
         for (let i = 0; i < this.cols; i++) {
-            const reel = new Reel(this.rows, this.symbolSize);
+            const reel = new Reel(this.rows + 2, this.symbolSize);
 
             reel.x = i * (this.symbolSize + this.reelSpacing);
 
             this.reels.push(reel);
-
-            reel.tint = 0xFFFFFF;
 
             this.addChild(reel);
         }

@@ -38,7 +38,7 @@ export class MainScene extends BaseScene {
         // Slot Machine
         this.slotMachine = new SlotMachine();
 
-        this.slotMachine.pivot.set(560, 545);
+        this.slotMachine.pivot.set(560, 770);
         this.slotMachine.position.set(this.gameWidth / 2, this.gameHeight / 2);
 
         this.addChild(this.slotMachine);
