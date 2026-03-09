@@ -47,6 +47,8 @@ export default function Class6() {
             // Load SpriteSheet
             const sheet = await PIXI.Assets.load(spritesheetUrl);
 
+            
+
             const anim = new PIXI.AnimatedSprite([
                 sheet.textures['RunRight01.png'],
                 sheet.textures['RunRight02.png'],

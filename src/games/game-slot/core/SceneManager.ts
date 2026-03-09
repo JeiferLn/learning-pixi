@@ -1,20 +1,29 @@
 import * as PIXI from 'pixi.js';
 
+import type { BaseScene } from '../scenes/BaseScene';
+
 export class SceneManager {
     private app: PIXI.Application;
-    private currentScene?: PIXI.Container;
+    private currentScene?: BaseScene;
 
     constructor(app: PIXI.Application) {
         this.app = app;
     }
 
-    changeScene(scene: PIXI.Container){
+    async changeScene(scene: BaseScene) {
         if (this.currentScene) {
             this.app.stage.removeChild(this.currentScene);
-            this.currentScene.destroy();
+            this.currentScene.destroyScene();
         }
 
         this.currentScene = scene;
-        this.app.stage.addChild(this.currentScene);
+
+        await scene.init();
+
+        this.app.stage.addChild(scene);
+    }
+
+    update(delta: number) {
+        this.currentScene?.update(delta);
     }
 }

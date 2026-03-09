@@ -38,6 +38,12 @@ export class Game {
 
         // Main Scene
         this.sceneManager.changeScene(new MainScene(GAME_WIDTH, GAME_HEIGHT));
+
+        // Loop
+        this.app.ticker.add((delta) => {
+            const deltaMS = Math.min(delta.deltaMS, 50);
+            this.sceneManager?.update(deltaMS / 1000);
+        });
     }
 
     destroy() {
