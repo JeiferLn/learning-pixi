@@ -24,8 +24,16 @@ export class Reel extends PIXI.Container {
     this.controller.stop();
   }
 
+  isStopped(): boolean {
+    return this.controller.isStopped();
+  }
+
   setResult(symbols: number[]): void {
     this.controller.setResult(symbols);
+  }
+
+  animateToResult(symbols: number[]): void {
+    this.controller.animateToResult(symbols);
   }
 
   update(delta: number): void {

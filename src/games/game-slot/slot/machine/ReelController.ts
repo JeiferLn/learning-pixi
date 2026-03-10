@@ -49,8 +49,33 @@ export class ReelController {
     this.state = ReelState.STOPPING;
   }
 
+  isStopped(): boolean {
+    return this.state === ReelState.STOPPED;
+  }
+
   setResult(symbols: number[]): void {
     this.targetSymbols = symbols;
+  }
+
+  /** Anima el reel bajando para mostrar el resultado (forceStopAll) */
+  animateToResult(symbols: number[]): void {
+    this.targetSymbols = symbols;
+    this.state = ReelState.STOPPING;
+    this.speed = 0;
+    this.startKickTimer = 0;
+    this.overshootRemaining = 0;
+    this.injectedMask = (1 << this.visibleRows) - 1;
+
+    const bufferCount = this.rows - this.visibleRows;
+    for (let i = 0; i < this.visibleRows; i++) {
+      this.view.setSymbol(bufferCount + i, this.targetSymbols[i]);
+    }
+    this.view.hideBufferSymbols(bufferCount);
+
+    const { snapOffset } = SLOT_CONFIG;
+    this.bounceStartOffset = snapOffset - this.symbolSize;
+    this.snapTarget = snapOffset;
+    this.bounceProgress = 0.001;
   }
 
   update(delta: number): void {

@@ -4,6 +4,11 @@ import { SLOT_CONFIG, type BoardResult } from '../../config/slotConfig';
 import { Reel } from './Reel';
 import { SlotAssets } from './SlotAssets';
 
+export interface SetResultOptions {
+  /** Si true, todos los reels animan bajando a la vez para mostrar el resultado */
+  forceStopAll?: boolean;
+}
+
 export class SlotMachine extends PIXI.Container {
   private reels: Reel[] = [];
 
@@ -13,6 +18,7 @@ export class SlotMachine extends PIXI.Container {
   private stopIndex = 0;
   private stopTimer = 0;
   private stopping = false;
+  private forceStopAll = false;
   private onSpinComplete?: () => void;
 
   constructor(options?: { onSpinComplete?: () => void }) {
@@ -45,7 +51,7 @@ export class SlotMachine extends PIXI.Container {
     this.reels[0].spin();
   }
 
-  setResult(board: BoardResult | number[][]): void {
+  setResult(board: BoardResult | number[][], options?: SetResultOptions): void {
     const { totalReels, visibleRows } = SLOT_CONFIG;
 
     if (!board || board.length !== totalReels) {
@@ -55,6 +61,8 @@ export class SlotMachine extends PIXI.Container {
       return;
     }
 
+    const forceStopAll = options?.forceStopAll ?? false;
+
     for (let i = 0; i < this.reels.length; i++) {
       const column = board[i];
       if (!column || column.length !== visibleRows) {
@@ -63,7 +71,19 @@ export class SlotMachine extends PIXI.Container {
         );
         continue;
       }
-      this.reels[i].setResult([...column]);
+      if (forceStopAll) {
+        this.reels[i].animateToResult([...column]);
+      } else {
+        this.reels[i].setResult([...column]);
+      }
+    }
+
+    if (forceStopAll) {
+      this.forceStopAll = true;
+      this.starting = false;
+      this.stopping = false;
+      this.startIndex = this.reels.length;
+      return;
     }
 
     this.stopIndex = 0;
@@ -74,6 +94,14 @@ export class SlotMachine extends PIXI.Container {
   update(delta: number): void {
     for (const reel of this.reels) {
       reel.update(delta);
+    }
+
+    if (this.forceStopAll) {
+      if (this.reels.every((r) => r.isStopped())) {
+        this.forceStopAll = false;
+        this.onSpinComplete?.();
+      }
+      return;
     }
 
     if (this.starting) {

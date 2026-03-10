@@ -13,6 +13,8 @@ export class MainScene extends BaseScene {
 
     private slotMachine!: SlotMachine;
     private gameUI!: GameUI;
+    private spinTimeoutId: ReturnType<typeof setTimeout> | null = null;
+    private isSpinning = false;
 
     constructor(gameWidth: number, gameHeight: number) {
         super();
@@ -40,7 +42,9 @@ export class MainScene extends BaseScene {
 
         // Slot Machine
         this.slotMachine = new SlotMachine({
-          onSpinComplete: () => this.gameUI.setSpinEnabled(true),
+            onSpinComplete: () => {
+                this.isSpinning = false;
+            },
         });
         this.slotMachine.pivot.set(
           SLOT_CONFIG.slotMachinePivot.x,
@@ -58,46 +62,60 @@ export class MainScene extends BaseScene {
     }
 
     private handleSpinClick(): void {
-        this.gameUI.setSpinEnabled(false);
+        if (this.isSpinning) {
+            this.applyResultImmediately();
+            return;
+        }
+
+        this.isSpinning = true;
         this.slotMachine.spin();
 
         // TODO: Reemplazar con fetch real al backend
         this.simulateSpinResponse();
     }
 
-    private simulateSpinResponse(): void {
-        const mockResponse: SpinResponse = {
-            board: [
-                [0, 4, 4],
-                [2, 3, 4],
-                [10, 2, 4],
-                [11, 10, 4],
-                [4, 13, 8],
-            ],
-            reward: {
-                streaks: [
-                    [
-                        [0, 0, 1],
-                        [0, 0, 1],
-                        [0, 0, 1],
-                        [0, 0, 1],
-                        [0, 0, 0],
-                    ],
+    private readonly MOCK_RESPONSE: SpinResponse = {
+        board: [
+            [0, 4, 4],
+            [2, 3, 4],
+            [10, 2, 4],
+            [11, 10, 4],
+            [4, 13, 8],
+        ],
+        reward: {
+            streaks: [
+                [
+                    [0, 0, 1],
+                    [0, 0, 1],
+                    [0, 0, 1],
+                    [0, 0, 1],
+                    [0, 0, 0],
                 ],
-                total_reward: '10000 COP',
-            },
-        };
+            ],
+            total_reward: '10000 COP',
+        },
+    };
 
-        setTimeout(() => {
-            this.slotMachine.setResult(mockResponse.board);
-            // mockResponse.reward disponible para mostrar ganancias, etc.
+    private simulateSpinResponse(): void {
+        this.spinTimeoutId = setTimeout(() => {
+            this.spinTimeoutId = null;
+            this.slotMachine.setResult(this.MOCK_RESPONSE.board);
         }, 2000);
+    }
+
+    private applyResultImmediately(): void {
+        if (this.spinTimeoutId !== null) {
+            clearTimeout(this.spinTimeoutId);
+            this.spinTimeoutId = null;
+        }
+        this.slotMachine.setResult(this.MOCK_RESPONSE.board, {
+            forceStopAll: true,
+        });
     }
 
     update(delta: number) {
         if (!this.slotMachine) return;
 
         this.slotMachine.update(delta);
-        this.gameUI.update(delta);
     }
 }
