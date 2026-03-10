@@ -22,8 +22,10 @@ export const SLOT_CONFIG = {
   symbolPaddingX: 30,
   /** Margen extra del ancho del mask respecto al símbolo */
   maskWidthPadding: 60,
+  /** Delay entre arranques de cada carrete (segundos) */
+  startDelay: 0.3,
   /** Delay entre paradas de cada carrete (segundos) */
-  stopDelay: 0.5,
+  stopDelay: 0.3,
   /** Pivot del SlotMachine para alineación con el background */
   slotMachinePivot: { x: 615, y: 740 },
   /** Velocidad de giro (px/segundo) */

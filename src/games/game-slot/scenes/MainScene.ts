@@ -71,7 +71,7 @@ export class MainScene extends BaseScene {
                 [4, 13, 8],
             ];
             this.slotMachine.setResult(result);
-        }, 2000);
+        }, 3000);
     }
 
     update(delta: number) {

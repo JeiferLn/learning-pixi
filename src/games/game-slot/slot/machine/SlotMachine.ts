@@ -7,6 +7,9 @@ import { SlotAssets } from './SlotAssets';
 export class SlotMachine extends PIXI.Container {
   private reels: Reel[] = [];
 
+  private startIndex = 0;
+  private startTimer = 0;
+  private starting = false;
   private stopIndex = 0;
   private stopTimer = 0;
   private stopping = false;
@@ -35,10 +38,11 @@ export class SlotMachine extends PIXI.Container {
     this.stopping = false;
     this.stopIndex = 0;
     this.stopTimer = 0;
+    this.startIndex = 1;
+    this.startTimer = 0;
+    this.starting = true;
 
-    for (const reel of this.reels) {
-      reel.spin();
-    }
+    this.reels[0].spin();
   }
 
   setResult(board: BoardResult | number[][]): void {
@@ -70,6 +74,21 @@ export class SlotMachine extends PIXI.Container {
   update(delta: number): void {
     for (const reel of this.reels) {
       reel.update(delta);
+    }
+
+    if (this.starting) {
+      this.startTimer += delta;
+
+      if (this.startIndex < this.reels.length && this.startTimer >= SLOT_CONFIG.startDelay) {
+        this.startTimer = 0;
+        this.reels[this.startIndex].spin();
+        this.startIndex++;
+      }
+
+      if (this.startIndex >= this.reels.length) {
+        this.starting = false;
+      }
+      return;
     }
 
     if (!this.stopping) return;
