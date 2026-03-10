@@ -60,6 +60,8 @@ export class Reel extends PIXI.Container {
         for (let i = 0; i < this.rows; i++) {
             const symbol = new Symbol();
 
+            symbol.setRandom();
+
             symbol.y = i * this.symbolSize;
 
             symbol.scale.set(0.25);
@@ -71,7 +73,8 @@ export class Reel extends PIXI.Container {
     }
 
     spin() {
-        // 3000
+        // 3000 para que se vea el efecto real de la ruleta
+        // 100 para testear movimiento
         this.speed = 100;
         
         this.spinning = true;
@@ -84,8 +87,7 @@ export class Reel extends PIXI.Container {
             symbol.y += this.speed * delta;
 
             if (symbol.y >= this.symbolSize * this.rows) {
-                symbol.y -= this.symbolSize * (this.rows);
-
+                symbol.y -= this.symbolSize * this.symbols.length;
                 symbol.setRandom();
             }
         }
