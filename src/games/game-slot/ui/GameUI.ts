@@ -1,6 +1,7 @@
 import * as PIXI from 'pixi.js';
 
-const BUTTON_RADIUS = 103;
+import { SLOT_CONFIG } from '../config/slotConfig';
+
 const DISABLED_OVERLAY_ALPHA = 0.5;
 const TRANSITION_SPEED = 8;
 
@@ -10,6 +11,7 @@ export class GameUI extends PIXI.Container {
   private isEnabled = true;
   private currentOverlayAlpha = 0;
   private targetOverlayAlpha = 0;
+  private readonly buttonRadius: number;
 
   constructor(
     gameWidth: number,
@@ -19,11 +21,13 @@ export class GameUI extends PIXI.Container {
     super();
 
     this.onSpinClick = onSpinClick;
+    this.buttonRadius = SLOT_CONFIG.spinButton.radius;
 
     this.spinButton = this.createSpinButton();
-    const diameter = BUTTON_RADIUS * 2;
-    this.spinButton.x = (gameWidth - diameter - 28) / 2;
-    this.spinButton.y = gameHeight - 215;
+    const { offsetX, offsetYFromBottom } = SLOT_CONFIG.spinButton;
+    const diameter = this.buttonRadius * 2;
+    this.spinButton.x = (gameWidth - diameter - offsetX) / 2;
+    this.spinButton.y = gameHeight - offsetYFromBottom;
 
     this.addChild(this.spinButton);
 
@@ -31,14 +35,15 @@ export class GameUI extends PIXI.Container {
   }
 
   private createSpinButton(): PIXI.Graphics {
+    const r = this.buttonRadius;
     const graphics = new PIXI.Graphics();
-    graphics.circle(BUTTON_RADIUS, BUTTON_RADIUS, BUTTON_RADIUS).fill({
+    graphics.circle(r, r, r).fill({
       color: 0xffffff,
       alpha: 0,
     });
     graphics.eventMode = 'static';
     graphics.cursor = 'pointer';
-    graphics.hitArea = new PIXI.Circle(BUTTON_RADIUS, BUTTON_RADIUS, BUTTON_RADIUS);
+    graphics.hitArea = new PIXI.Circle(r, r, r);
     return graphics;
   }
 
@@ -67,8 +72,9 @@ export class GameUI extends PIXI.Container {
   }
 
   private updateOverlay(): void {
+    const r = this.buttonRadius;
     this.spinButton.clear();
-    this.spinButton.circle(BUTTON_RADIUS, BUTTON_RADIUS, BUTTON_RADIUS).fill({
+    this.spinButton.circle(r, r, r).fill({
       color: this.currentOverlayAlpha > 0 ? 0x000000 : 0xffffff,
       alpha: this.currentOverlayAlpha,
     });

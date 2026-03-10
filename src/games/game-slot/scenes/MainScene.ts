@@ -38,7 +38,7 @@ export class MainScene extends BaseScene {
 
         this.addChild(background);
 
-        // Slot Machine (no auto-spin)
+        // Slot Machine
         this.slotMachine = new SlotMachine({
           onSpinComplete: () => this.gameUI.setSpinEnabled(true),
         });

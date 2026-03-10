@@ -1,41 +1,17 @@
 /**
- * Configuración centralizada de la máquina tragamonedas.
- * Ajustar estos valores según el diseño del juego.
+ * Configuración centralizada del slot.
+ * Re-exporta layout (visual) y game (lógico) para compatibilidad.
  */
+import { SLOT_GAME_CONFIG } from './slotGameConfig';
+import { SLOT_LAYOUT_CONFIG } from './slotLayoutConfig';
+
+export { SLOT_GAME_CONFIG } from './slotGameConfig';
+export { SLOT_LAYOUT_CONFIG } from './slotLayoutConfig';
+
+/** Config unificada (layout + game) para imports existentes */
 export const SLOT_CONFIG = {
-  /** Filas visibles en la ventana de juego */
-  visibleRows: 3,
-  /** Número de carretes (columnas) */
-  totalReels: 5,
-  /** Tamaño en px de cada símbolo */
-  symbolSize: 205,
-  /** Espacio entre carretes */
-  reelSpacing: 36,
-  /** Área visible: posición Y superior y altura del mask */
-  visibleArea: {
-    top: 405,
-    height: 630,
-  },
-  /** Offset para centrar símbolos al detenerse */
-  snapOffset: 20,
-  /** Padding horizontal del símbolo dentro del carrete */
-  symbolPaddingX: 30,
-  /** Margen extra del ancho del mask respecto al símbolo */
-  maskWidthPadding: 60,
-  /** Delay entre arranques de cada carrete (segundos) */
-  startDelay: 0.3,
-  /** Delay entre paradas de cada carrete (segundos) */
-  stopDelay: 0.3,
-  /** Pivot del SlotMachine para alineación con el background */
-  slotMachinePivot: { x: 615, y: 740 },
-  /** Velocidad de giro (px/segundo) */
-  spinSpeed: 3000,
-  /**
-   * Zona Y donde se inyectan los símbolos para que "rueden" hacia la vista.
-   * Centros entre 307.5 y 410 = justo encima del área visible.
-   */
-  injectionZoneTop: 307.5,
-  injectionZoneBottom: 410,
+  ...SLOT_LAYOUT_CONFIG,
+  ...SLOT_GAME_CONFIG,
 } as const;
 
 /** Resultado del tablero: array de columnas, cada columna tiene visibleRows símbolos por ID */
