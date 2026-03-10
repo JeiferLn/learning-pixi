@@ -10,9 +10,11 @@ export class SlotMachine extends PIXI.Container {
   private stopIndex = 0;
   private stopTimer = 0;
   private stopping = false;
+  private onSpinComplete?: () => void;
 
-  constructor() {
+  constructor(options?: { onSpinComplete?: () => void }) {
     super();
+    this.onSpinComplete = options?.onSpinComplete;
     this.createReels();
   }
 
@@ -82,6 +84,7 @@ export class SlotMachine extends PIXI.Container {
         this.stopIndex++;
       } else {
         this.stopping = false;
+        this.onSpinComplete?.();
       }
     }
   }

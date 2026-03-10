@@ -13,19 +13,19 @@ export const SLOT_CONFIG = {
   reelSpacing: 36,
   /** Área visible: posición Y superior y altura del mask */
   visibleArea: {
-    top: 410,
+    top: 405,
     height: 630,
   },
   /** Offset para centrar símbolos al detenerse */
   snapOffset: 20,
   /** Padding horizontal del símbolo dentro del carrete */
-  symbolPaddingX: 20,
+  symbolPaddingX: 30,
   /** Margen extra del ancho del mask respecto al símbolo */
-  maskWidthPadding: 40,
+  maskWidthPadding: 60,
   /** Delay entre paradas de cada carrete (segundos) */
   stopDelay: 0.5,
   /** Pivot del SlotMachine para alineación con el background */
-  slotMachinePivot: { x: 606, y: 740 },
+  slotMachinePivot: { x: 615, y: 740 },
   /** Velocidad de giro (px/segundo) */
   spinSpeed: 3000,
   /**

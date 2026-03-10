@@ -2,6 +2,7 @@ import * as PIXI from 'pixi.js';
 
 import { SLOT_CONFIG } from '../config/slotConfig';
 import { SlotMachine } from '../slot';
+import { GameUI } from '../ui/GameUI';
 import { BaseScene } from './BaseScene';
 
 import backgroundUrl from '../assets/background.png';
@@ -11,6 +12,7 @@ export class MainScene extends BaseScene {
     private gameHeight: number;
 
     private slotMachine!: SlotMachine;
+    private gameUI!: GameUI;
 
     constructor(gameWidth: number, gameHeight: number) {
         super();
@@ -36,8 +38,10 @@ export class MainScene extends BaseScene {
 
         this.addChild(background);
 
-        // Slot Machine
-        this.slotMachine = new SlotMachine();
+        // Slot Machine (no auto-spin)
+        this.slotMachine = new SlotMachine({
+          onSpinComplete: () => this.gameUI.setSpinEnabled(true),
+        });
         this.slotMachine.pivot.set(
           SLOT_CONFIG.slotMachinePivot.x,
           SLOT_CONFIG.slotMachinePivot.y,
@@ -46,26 +50,34 @@ export class MainScene extends BaseScene {
 
         this.addChild(this.slotMachine);
 
+        // Game UI
+        this.gameUI = new GameUI(this.gameWidth, this.gameHeight, () =>
+          this.handleSpinClick(),
+        );
+        this.addChild(this.gameUI);
+    }
+
+    private handleSpinClick(): void {
+        this.gameUI.setSpinEnabled(false);
         this.slotMachine.spin();
 
+        // TODO: Reemplazar con respuesta real del backend
         setTimeout(() => {
-
             const result = [
                 [0, 4, 4],
                 [2, 3, 4],
                 [10, 2, 4],
                 [11, 10, 4],
-                [4, 13, 8]
+                [4, 13, 8],
             ];
-
             this.slotMachine.setResult(result);
-
-        }, 3000);
+        }, 2000);
     }
 
     update(delta: number) {
         if (!this.slotMachine) return;
 
         this.slotMachine.update(delta);
+        this.gameUI.update(delta);
     }
 }

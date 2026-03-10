@@ -1,203 +1,39 @@
 import * as PIXI from 'pixi.js';
 
-import { SLOT_CONFIG } from '../../config/slotConfig';
-import { SlotSymbol } from '../symbols/SlotSymbol';
-import { ReelState } from './ReelState';
+import { ReelController } from './ReelController';
+import { ReelView } from './ReelView';
 
 export class Reel extends PIXI.Container {
-  private symbols: SlotSymbol[] = [];
-  private targetSymbols: number[] = [];
-
-  private reelPosition = 0;
-  private totalHeight = 0;
-
-  private symbolContainer = new PIXI.Container();
-  private maskSprite: PIXI.Sprite | null = null;
-
-  private readonly rows: number;
-  private readonly symbolSize: number;
-  private readonly visibleRows: number;
-
-  private speed = 0;
-  private state: ReelState = ReelState.IDLE;
-  private injectedMask = 0; // bitmask: 1<<i si ya inyectamos targetSymbols[i]
+  private readonly view: ReelView;
+  private readonly controller: ReelController;
 
   constructor(rows: number, symbolSize: number, maskTexture: PIXI.Texture) {
     super();
 
-    this.rows = rows;
-    this.symbolSize = symbolSize;
-    this.visibleRows = SLOT_CONFIG.visibleRows;
-    this.totalHeight = rows * symbolSize;
+    this.view = new ReelView(rows, symbolSize, maskTexture);
+    this.controller = new ReelController(this.view);
 
-    this.createMask(maskTexture);
-    this.addChild(this.symbolContainer);
-    this.createSymbols();
-  }
-
-  private createMask(maskTexture: PIXI.Texture): void {
-    const { visibleArea } = SLOT_CONFIG;
-
-    this.maskSprite = new PIXI.Sprite(maskTexture);
-    this.maskSprite.x = 0;
-    this.maskSprite.y = visibleArea.top;
-
-    this.addChild(this.maskSprite);
-    this.symbolContainer.mask = this.maskSprite;
-  }
-
-  private createSymbols(): void {
-    const { symbolPaddingX } = SLOT_CONFIG;
-    const halfSymbol = this.symbolSize / 2;
-
-    for (let i = 0; i < this.rows; i++) {
-      const symbol = new SlotSymbol();
-      symbol.setRandom();
-      symbol.anchor.set(0.5);
-      symbol.scale.set(this.symbolSize / symbol.texture.height);
-      symbol.x = halfSymbol + symbolPaddingX;
-      symbol.y = i * this.symbolSize + halfSymbol;
-
-      this.symbols.push(symbol);
-      this.symbolContainer.addChild(symbol);
-    }
+    this.addChild(this.view);
   }
 
   spin(): void {
-    this.speed = SLOT_CONFIG.spinSpeed;
-    this.state = ReelState.SPINNING;
-    this.injectedMask = 0;
-    this.symbols.forEach((s) => (s.visible = true));
-  }
-
-  setResult(symbols: number[]): void {
-    this.targetSymbols = symbols;
+    this.controller.spin();
   }
 
   stop(): void {
-    this.state = ReelState.STOPPING;
+    this.controller.stop();
+  }
+
+  setResult(symbols: number[]): void {
+    this.controller.setResult(symbols);
   }
 
   update(delta: number): void {
-    if (this.state !== ReelState.SPINNING && this.state !== ReelState.STOPPING) {
-      return;
-    }
-
-    this.reelPosition += this.speed * delta;
-    this.reelPosition %= this.totalHeight;
-    if (this.reelPosition < 0) this.reelPosition += this.totalHeight;
-
-    const offset = this.reelPosition;
-
-    if (this.state === ReelState.STOPPING && this.targetSymbols.length === this.visibleRows) {
-      this.tryInjectSymbols(offset);
-      const allInjected = this.injectedMask === (1 << this.visibleRows) - 1;
-      if (allInjected && this.isAtSnapPosition(offset)) {
-        this.applyStopAlignment();
-        return;
-      }
-    }
-
-    this.updateSymbolPositions(
-      this.reelPosition,
-      this.state === ReelState.SPINNING, // no randomize cuando estamos por parar
-    );
-  }
-
-  private tryInjectSymbols(offset: number): void {
-    const { visibleArea, injectionZoneTop, injectionZoneBottom } = SLOT_CONFIG;
-    const halfSymbol = this.symbolSize / 2;
-    const wrapBottom = visibleArea.top + visibleArea.height + halfSymbol;
-    const bufferCount = this.rows - this.visibleRows;
-
-    for (let i = 0; i < this.visibleRows; i++) {
-      if (this.injectedMask & (1 << i)) continue;
-
-      const symbolIndex = bufferCount + i;
-      let centerY = symbolIndex * this.symbolSize + halfSymbol + offset;
-
-      while (centerY >= wrapBottom) {
-        centerY -= this.totalHeight;
-      }
-
-      if (
-        centerY >= injectionZoneTop &&
-        centerY < injectionZoneBottom &&
-        this.targetSymbols[i] !== undefined
-      ) {
-        this.symbols[symbolIndex].setSymbol(this.targetSymbols[i]);
-        this.injectedMask |= 1 << i;
-      }
-    }
-  }
-
-  private isAtSnapPosition(offset: number): boolean {
-    const { snapOffset } = SLOT_CONFIG;
-    const tolerance = 50; // px de margen
-    const diff = (offset - snapOffset + this.totalHeight) % this.totalHeight;
-    return diff < tolerance || diff > this.totalHeight - tolerance;
-  }
-
-  private updateSymbolPositions(offset: number, allowRandomize = false): void {
-    const { visibleArea } = SLOT_CONFIG;
-    const halfSymbol = this.symbolSize / 2;
-    const wrapBottom = visibleArea.top + visibleArea.height + halfSymbol;
-    const wrapTop = visibleArea.top - halfSymbol;
-
-    for (let i = 0; i < this.symbols.length; i++) {
-      const symbol = this.symbols[i];
-
-      let centerY = i * this.symbolSize + halfSymbol + offset;
-
-      while (centerY >= wrapBottom) {
-        centerY -= this.totalHeight;
-      }
-
-      symbol.y = centerY;
-
-      if (allowRandomize && centerY < wrapTop) {
-        symbol.setRandom();
-      }
-    }
-  }
-
-  private applyStopAlignment(): void {
-    const { snapOffset } = SLOT_CONFIG;
-    const bufferCount = this.rows - this.visibleRows;
-
-    for (let i = 0; i < this.visibleRows; i++) {
-      this.symbols[bufferCount + i].setSymbol(this.targetSymbols[i]);
-    }
-
-    for (let i = 0; i < bufferCount; i++) {
-      this.symbols[i].visible = false;
-    }
-
-    this.reelPosition =
-      Math.floor(this.reelPosition / this.totalHeight) * this.totalHeight + snapOffset;
-    this.reelPosition %= this.totalHeight;
-    if (this.reelPosition < 0) this.reelPosition += this.totalHeight;
-
-    const offset = this.reelPosition;
-    const halfSymbol = this.symbolSize / 2;
-
-    for (let i = 0; i < this.symbols.length; i++) {
-      let centerY = i * this.symbolSize + halfSymbol + offset;
-      if (centerY >= this.totalHeight) centerY -= this.totalHeight;
-      else if (centerY < 0) centerY += this.totalHeight;
-      this.symbols[i].y = centerY;
-    }
-
-    this.state = ReelState.STOPPED;
-    this.speed = 0;
+    this.controller.update(delta);
   }
 
   override destroy(options?: PIXI.DestroyOptions | boolean): void {
-    // No destruir texture: es compartida por SlotAssets
-    this.maskSprite = null;
-    this.symbolContainer.mask = null;
-    this.symbols = [];
-    this.targetSymbols = [];
+    this.view.destroy(options);
     super.destroy(options);
   }
 }
