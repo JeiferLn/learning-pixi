@@ -1,7 +1,8 @@
 import * as PIXI from 'pixi.js';
 
-import { SLOT_CONFIG } from '../config/slotConfig';
-import { SlotSymbol } from './SlotSymbol';
+import { SLOT_CONFIG } from '../../config/slotConfig';
+import { SlotSymbol } from '../symbols/SlotSymbol';
+import { ReelState } from './ReelState';
 
 export class Reel extends PIXI.Container {
   private symbols: SlotSymbol[] = [];
@@ -18,8 +19,7 @@ export class Reel extends PIXI.Container {
   private readonly visibleRows: number;
 
   private speed = 0;
-  private spinning = false;
-  private shouldStop = false;
+  private state: ReelState = ReelState.IDLE;
   private injectedMask = 0; // bitmask: 1<<i si ya inyectamos targetSymbols[i]
 
   constructor(rows: number, symbolSize: number, maskTexture: PIXI.Texture) {
@@ -65,7 +65,7 @@ export class Reel extends PIXI.Container {
 
   spin(): void {
     this.speed = SLOT_CONFIG.spinSpeed;
-    this.spinning = true;
+    this.state = ReelState.SPINNING;
     this.injectedMask = 0;
     this.symbols.forEach((s) => (s.visible = true));
   }
@@ -75,11 +75,13 @@ export class Reel extends PIXI.Container {
   }
 
   stop(): void {
-    this.shouldStop = true;
+    this.state = ReelState.STOPPING;
   }
 
   update(delta: number): void {
-    if (!this.spinning) return;
+    if (this.state !== ReelState.SPINNING && this.state !== ReelState.STOPPING) {
+      return;
+    }
 
     this.reelPosition += this.speed * delta;
     this.reelPosition %= this.totalHeight;
@@ -87,7 +89,7 @@ export class Reel extends PIXI.Container {
 
     const offset = this.reelPosition;
 
-    if (this.shouldStop && this.targetSymbols.length === this.visibleRows) {
+    if (this.state === ReelState.STOPPING && this.targetSymbols.length === this.visibleRows) {
       this.tryInjectSymbols(offset);
       const allInjected = this.injectedMask === (1 << this.visibleRows) - 1;
       if (allInjected && this.isAtSnapPosition(offset)) {
@@ -98,7 +100,7 @@ export class Reel extends PIXI.Container {
 
     this.updateSymbolPositions(
       this.reelPosition,
-      !this.shouldStop, // no randomize cuando estamos por parar
+      this.state === ReelState.SPINNING, // no randomize cuando estamos por parar
     );
   }
 
@@ -153,7 +155,7 @@ export class Reel extends PIXI.Container {
 
       symbol.y = centerY;
 
-      if (allowRandomize && centerY < wrapTop && !this.shouldStop) {
+      if (allowRandomize && centerY < wrapTop) {
         symbol.setRandom();
       }
     }
@@ -186,8 +188,7 @@ export class Reel extends PIXI.Container {
       this.symbols[i].y = centerY;
     }
 
-    this.spinning = false;
-    this.shouldStop = false;
+    this.state = ReelState.STOPPED;
     this.speed = 0;
   }
 

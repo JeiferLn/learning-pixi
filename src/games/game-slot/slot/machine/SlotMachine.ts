@@ -1,6 +1,6 @@
 import * as PIXI from 'pixi.js';
 
-import { SLOT_CONFIG, type BoardResult } from '../config/slotConfig';
+import { SLOT_CONFIG, type BoardResult } from '../../config/slotConfig';
 import { Reel } from './Reel';
 import { SlotAssets } from './SlotAssets';
 

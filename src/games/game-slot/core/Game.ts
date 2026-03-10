@@ -4,7 +4,7 @@ import { MainScene } from "../scenes/MainScene";
 import { ResizeManager } from "./ResizeManager";
 import { SceneManager } from "./SceneManager";
 
-import { SymbolAtlas } from "../slot/SymbolAtlas";
+import { SymbolAtlas } from "../slot";
 
 const GAME_WIDTH = 1920;
 const GAME_HEIGHT = 1080;

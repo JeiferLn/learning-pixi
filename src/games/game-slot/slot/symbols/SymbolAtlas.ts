@@ -1,6 +1,6 @@
 import * as PIXI from 'pixi.js';
 
-import spritesheetUrl from '../assets/spritesheet.json?url';
+import spritesheetUrl from '../../assets/spritesheet.json?url';
 
 export class SymbolAtlas {
   private static textures: PIXI.Texture[] = [];

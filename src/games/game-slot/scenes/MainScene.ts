@@ -1,7 +1,7 @@
 import * as PIXI from 'pixi.js';
 
 import { SLOT_CONFIG } from '../config/slotConfig';
-import { SlotMachine } from '../slot/SlotMachine';
+import { SlotMachine } from '../slot';
 import { BaseScene } from './BaseScene';
 
 import backgroundUrl from '../assets/background.png';

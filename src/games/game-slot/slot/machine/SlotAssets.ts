@@ -1,6 +1,6 @@
 import * as PIXI from 'pixi.js';
 
-import { SLOT_CONFIG } from '../config/slotConfig';
+import { SLOT_CONFIG } from '../../config/slotConfig';
 
 export class SlotAssets {
   private static reelMaskTexture: PIXI.Texture | null = null;
