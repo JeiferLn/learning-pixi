@@ -1,7 +1,8 @@
 import * as PIXI from 'pixi.js';
 
-import { BaseScene } from './BaseScene';
+import { SLOT_CONFIG } from '../config/slotConfig';
 import { SlotMachine } from '../slot/SlotMachine';
+import { BaseScene } from './BaseScene';
 
 import backgroundUrl from '../assets/background.png';
 
@@ -37,8 +38,10 @@ export class MainScene extends BaseScene {
 
         // Slot Machine
         this.slotMachine = new SlotMachine();
-
-        this.slotMachine.pivot.set(606, 740);
+        this.slotMachine.pivot.set(
+          SLOT_CONFIG.slotMachinePivot.x,
+          SLOT_CONFIG.slotMachinePivot.y,
+        );
         this.slotMachine.position.set(this.gameWidth / 2, this.gameHeight / 2);
 
         this.addChild(this.slotMachine);

@@ -1,174 +1,221 @@
 import * as PIXI from 'pixi.js';
 
-import { Symbol } from './Symbol';
-
-const VISIBLE_TOP = 410;
-const VISIBLE_HEIGHT = 630;
-const SNAP_OFFSET = 20;
-
-/** El símbolo debe estar completamente fuera del mask antes de reposicionarse */
+import { SLOT_CONFIG } from '../config/slotConfig';
+import { SlotSymbol } from './SlotSymbol';
 
 export class Reel extends PIXI.Container {
-    private symbols: Symbol[] = []
-    private targetSymbols: number[] = [];
+  private symbols: SlotSymbol[] = [];
+  private targetSymbols: number[] = [];
 
-    private reelPosition = 0;
-    private totalHeight: number;
+  private reelPosition = 0;
+  private totalHeight = 0;
 
-    private symbolContainer = new PIXI.Container();
+  private symbolContainer = new PIXI.Container();
+  private maskSprite: PIXI.Sprite | null = null;
 
-    private rows: number;
-    private symbolSize: number;
+  private readonly rows: number;
+  private readonly symbolSize: number;
+  private readonly visibleRows: number;
 
-    private speed = 0;
-    private spinning = false;
-    private shouldStop = false;
+  private speed = 0;
+  private spinning = false;
+  private shouldStop = false;
+  private injectedMask = 0; // bitmask: 1<<i si ya inyectamos targetSymbols[i]
 
-    constructor(rows: number, symbolSize: number) {
-        super();
+  constructor(rows: number, symbolSize: number) {
+    super();
 
-        this.rows = rows;
-        this.symbolSize = symbolSize;
+    this.rows = rows;
+    this.symbolSize = symbolSize;
+    this.visibleRows = SLOT_CONFIG.visibleRows;
+    this.totalHeight = rows * symbolSize;
 
-        this.totalHeight = this.rows * this.symbolSize;
+    this.createMask();
+    this.addChild(this.symbolContainer);
+    this.createSymbols();
+  }
 
-        this.createMask();
+  private createMask(): void {
+    const { visibleArea, maskWidthPadding } = SLOT_CONFIG;
+    const width = this.symbolSize + maskWidthPadding;
+    const height = visibleArea.height;
 
-        this.addChild(this.symbolContainer);
+    const canvas = document.createElement('canvas');
+    canvas.width = width;
+    canvas.height = height;
+    const ctx = canvas.getContext('2d')!;
 
-        this.createSymbols();
+    const gradient = ctx.createLinearGradient(0, 0, 0, height);
+    gradient.addColorStop(0, 'rgba(255,255,255,0)');
+    gradient.addColorStop(0.02, 'rgba(255,255,255,1)');
+    gradient.addColorStop(0.98, 'rgba(255,255,255,1)');
+    gradient.addColorStop(1, 'rgba(255,255,255,0)');
+
+    ctx.fillStyle = gradient;
+    ctx.fillRect(0, 0, width, height);
+
+    const texture = PIXI.Texture.from(canvas);
+    this.maskSprite = new PIXI.Sprite(texture);
+    this.maskSprite.x = 0;
+    this.maskSprite.y = visibleArea.top;
+
+    this.addChild(this.maskSprite);
+    this.symbolContainer.mask = this.maskSprite;
+  }
+
+  private createSymbols(): void {
+    const { symbolPaddingX } = SLOT_CONFIG;
+    const halfSymbol = this.symbolSize / 2;
+
+    for (let i = 0; i < this.rows; i++) {
+      const symbol = new SlotSymbol();
+      symbol.setRandom();
+      symbol.anchor.set(0.5);
+      symbol.scale.set(this.symbolSize / symbol.texture.height);
+      symbol.x = halfSymbol + symbolPaddingX;
+      symbol.y = i * this.symbolSize + halfSymbol;
+
+      this.symbols.push(symbol);
+      this.symbolContainer.addChild(symbol);
+    }
+  }
+
+  spin(): void {
+    this.speed = SLOT_CONFIG.spinSpeed;
+    this.spinning = true;
+    this.injectedMask = 0;
+    this.symbols.forEach((s) => (s.visible = true));
+  }
+
+  setResult(symbols: number[]): void {
+    this.targetSymbols = symbols;
+  }
+
+  stop(): void {
+    this.shouldStop = true;
+  }
+
+  update(delta: number): void {
+    if (!this.spinning) return;
+
+    this.reelPosition += this.speed * delta;
+    this.reelPosition %= this.totalHeight;
+    if (this.reelPosition < 0) this.reelPosition += this.totalHeight;
+
+    const offset = this.reelPosition;
+
+    if (this.shouldStop && this.targetSymbols.length === this.visibleRows) {
+      this.tryInjectSymbols(offset);
+      const allInjected = this.injectedMask === (1 << this.visibleRows) - 1;
+      if (allInjected && this.isAtSnapPosition(offset)) {
+        this.applyStopAlignment();
+        return;
+      }
     }
 
-    private createMask() {
-        const width = this.symbolSize + 40;
+    this.updateSymbolPositions(
+      this.reelPosition,
+      !this.shouldStop, // no randomize cuando estamos por parar
+    );
+  }
 
-        // Crear textura con gradiente difuminado (transparente arriba y abajo)
-        const canvas = document.createElement('canvas');
-        canvas.width = width;
-        canvas.height = VISIBLE_HEIGHT;
-        const ctx = canvas.getContext('2d')!;
+  private tryInjectSymbols(offset: number): void {
+    const { visibleArea, injectionZoneTop, injectionZoneBottom } = SLOT_CONFIG;
+    const halfSymbol = this.symbolSize / 2;
+    const wrapBottom = visibleArea.top + visibleArea.height + halfSymbol;
+    const bufferCount = this.rows - this.visibleRows;
 
-        const gradient = ctx.createLinearGradient(0, 0, 0, VISIBLE_HEIGHT);
-        gradient.addColorStop(0, 'rgba(255,255,255,0)');
-        gradient.addColorStop(0.02, 'rgba(255,255,255,1)');
-        gradient.addColorStop(0.98, 'rgba(255,255,255,1)');
-        gradient.addColorStop(1, 'rgba(255,255,255,0)');
+    for (let i = 0; i < this.visibleRows; i++) {
+      if (this.injectedMask & (1 << i)) continue;
 
-        ctx.fillStyle = gradient;
-        ctx.fillRect(0, 0, width, VISIBLE_HEIGHT);
+      const symbolIndex = bufferCount + i;
+      let centerY = symbolIndex * this.symbolSize + halfSymbol + offset;
 
-        const texture = PIXI.Texture.from(canvas);
-        const mask = new PIXI.Sprite(texture);
-        mask.x = 0;
-        mask.y = VISIBLE_TOP;
+      while (centerY >= wrapBottom) {
+        centerY -= this.totalHeight;
+      }
 
-        this.addChild(mask);
+      if (
+        centerY >= injectionZoneTop &&
+        centerY < injectionZoneBottom &&
+        this.targetSymbols[i] !== undefined
+      ) {
+        this.symbols[symbolIndex].setSymbol(this.targetSymbols[i]);
+        this.injectedMask |= 1 << i;
+      }
+    }
+  }
 
-        this.symbolContainer.mask = mask;
+  private isAtSnapPosition(offset: number): boolean {
+    const { snapOffset } = SLOT_CONFIG;
+    const tolerance = 50; // px de margen
+    const diff = (offset - snapOffset + this.totalHeight) % this.totalHeight;
+    return diff < tolerance || diff > this.totalHeight - tolerance;
+  }
+
+  private updateSymbolPositions(offset: number, allowRandomize = false): void {
+    const { visibleArea } = SLOT_CONFIG;
+    const halfSymbol = this.symbolSize / 2;
+    const wrapBottom = visibleArea.top + visibleArea.height + halfSymbol;
+    const wrapTop = visibleArea.top - halfSymbol;
+
+    for (let i = 0; i < this.symbols.length; i++) {
+      const symbol = this.symbols[i];
+
+      let centerY = i * this.symbolSize + halfSymbol + offset;
+
+      while (centerY >= wrapBottom) {
+        centerY -= this.totalHeight;
+      }
+
+      symbol.y = centerY;
+
+      if (allowRandomize && centerY < wrapTop && !this.shouldStop) {
+        symbol.setRandom();
+      }
+    }
+  }
+
+  private applyStopAlignment(): void {
+    const { snapOffset } = SLOT_CONFIG;
+    const bufferCount = this.rows - this.visibleRows;
+
+    for (let i = 0; i < this.visibleRows; i++) {
+      this.symbols[bufferCount + i].setSymbol(this.targetSymbols[i]);
     }
 
-    private createSymbols() {
-        for (let i = 0; i < this.rows; i++) {
-
-            const symbol = new Symbol();
-
-            symbol.setRandom();
-
-            symbol.anchor.set(0.5);
-
-            const scale = this.symbolSize / symbol.texture.height;
-            symbol.scale.set(scale);
-
-            symbol.x = this.symbolSize / 2 + 20;
-            symbol.y = i * this.symbolSize + this.symbolSize / 2;
-
-            this.symbols.push(symbol);
-
-            this.symbolContainer.addChild(symbol);
-        }
+    for (let i = 0; i < bufferCount; i++) {
+      this.symbols[i].visible = false;
     }
 
-    spin() {
-        // 3000 para que se vea el efecto real de la ruleta
-        // 100 para testear movimiento
-        this.speed = 3000;
-        this.spinning = true;
+    this.reelPosition =
+      Math.floor(this.reelPosition / this.totalHeight) * this.totalHeight + snapOffset;
+    this.reelPosition %= this.totalHeight;
+    if (this.reelPosition < 0) this.reelPosition += this.totalHeight;
+
+    const offset = this.reelPosition;
+    const halfSymbol = this.symbolSize / 2;
+
+    for (let i = 0; i < this.symbols.length; i++) {
+      let centerY = i * this.symbolSize + halfSymbol + offset;
+      if (centerY >= this.totalHeight) centerY -= this.totalHeight;
+      else if (centerY < 0) centerY += this.totalHeight;
+      this.symbols[i].y = centerY;
     }
 
-    setResult(symbols: number[]) {
-        this.targetSymbols = symbols;
+    this.spinning = false;
+    this.shouldStop = false;
+    this.speed = 0;
+  }
+
+  override destroy(options?: PIXI.DestroyOptions | boolean): void {
+    if (this.maskSprite?.texture) {
+      this.maskSprite.texture.destroy(true);
     }
-
-    stop() {
-        this.shouldStop = true;
-    }
-
-    update(delta: number) {
-        if (!this.spinning) return;
-
-        // Detener y alinear cuando se solicita
-        if (this.shouldStop && this.targetSymbols.length === 3) {
-            this.applyStopAlignment();
-            return;
-        }
-
-        this.reelPosition += this.speed * delta;
-        this.reelPosition %= this.totalHeight;
-        if (this.reelPosition < 0) this.reelPosition += this.totalHeight;
-
-        const offset = this.reelPosition;
-        const halfSymbol = this.symbolSize / 2;
-
-        // Símbolo debe estar completamente fuera del mask antes de reposicionarse
-        const wrapBottom = VISIBLE_TOP + VISIBLE_HEIGHT + halfSymbol; // Sale por abajo
-        const wrapTop = VISIBLE_TOP - halfSymbol; // Sale por arriba
-
-        for (let i = 0; i < this.symbols.length; i++) {
-            const symbol = this.symbols[i];
-
-            // Posición del centro (anchor 0.5)
-            let centerY = i * this.symbolSize + halfSymbol + offset;
-
-            // Solo wrap cuando sale por abajo del mask (reaparece arriba)
-            while (centerY >= wrapBottom) {
-                centerY -= this.totalHeight;
-            }
-
-            symbol.y = centerY;
-
-            // setRandom solo cuando el símbolo ya salió del mask (por arriba)
-            if (centerY < wrapTop) {
-                if (!this.shouldStop) {
-                    symbol.setRandom();
-                }
-            }
-        }
-    }
-
-    private applyStopAlignment() {
-        // Asignar los símbolos objetivo a las 3 posiciones visibles (índices 2, 3, 4)
-        this.symbols[2].setSymbol(this.targetSymbols[0]);
-        this.symbols[3].setSymbol(this.targetSymbols[1]);
-        this.symbols[4].setSymbol(this.targetSymbols[2]);
-
-        // Snap a la posición que centra los símbolos en el área visible
-        this.reelPosition =
-            Math.floor(this.reelPosition / this.totalHeight) * this.totalHeight + SNAP_OFFSET;
-        this.reelPosition %= this.totalHeight;
-        if (this.reelPosition < 0) this.reelPosition += this.totalHeight;
-
-        const offset = this.reelPosition;
-        const halfSymbol = this.symbolSize / 2;
-
-        for (let i = 0; i < this.symbols.length; i++) {
-            let centerY = i * this.symbolSize + halfSymbol + offset;
-            if (centerY >= this.totalHeight) centerY -= this.totalHeight;
-            else if (centerY < 0) centerY += this.totalHeight;
-            this.symbols[i].y = centerY;
-        }
-
-        this.spinning = false;
-        this.shouldStop = false;
-        this.speed = 0;
-    }
+    this.maskSprite = null;
+    this.symbolContainer.mask = null;
+    this.symbols = [];
+    this.targetSymbols = [];
+    super.destroy(options);
+  }
 }

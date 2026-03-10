@@ -1,78 +1,94 @@
 import * as PIXI from 'pixi.js';
 
+import { SLOT_CONFIG, type BoardResult } from '../config/slotConfig';
 import { Reel } from './Reel';
 
 export class SlotMachine extends PIXI.Container {
-    private reels: Reel[] = [];
+  private reels: Reel[] = [];
 
-    private rows = 3;
-    private cols = 5;
+  private stopIndex = 0;
+  private stopTimer = 0;
+  private stopping = false;
 
-    private symbolSize = 205;
-    private reelSpacing = 38;
+  constructor() {
+    super();
+    this.createReels();
+  }
 
-    private stopIndex = 0;
-    private stopTimer = 0;
-    private stopping = false;
-    private stopDelay = 0.5;
+  private createReels(): void {
+    const { visibleRows, totalReels, symbolSize, reelSpacing } = SLOT_CONFIG;
+    const bufferRows = 2;
 
-    constructor() {
-        super();
+    for (let i = 0; i < totalReels; i++) {
+      const reel = new Reel(visibleRows + bufferRows, symbolSize);
+      reel.x = i * (symbolSize + reelSpacing);
+      this.reels.push(reel);
+      this.addChild(reel);
+    }
+  }
 
-        this.createReels();
+  spin(): void {
+    this.stopping = false;
+    this.stopIndex = 0;
+    this.stopTimer = 0;
+
+    for (const reel of this.reels) {
+      reel.spin();
+    }
+  }
+
+  setResult(board: BoardResult | number[][]): void {
+    const { totalReels, visibleRows } = SLOT_CONFIG;
+
+    if (!board || board.length !== totalReels) {
+      console.warn(
+        `[SlotMachine] Invalid board: expected ${totalReels} columns, got ${board?.length ?? 0}`,
+      );
+      return;
     }
 
-    private createReels() {
-        for (let i = 0; i < this.cols; i++) {
-            const reel = new Reel(this.rows + 2, this.symbolSize);
-
-            reel.x = i * (this.symbolSize + this.reelSpacing);
-
-            this.reels.push(reel);
-
-            this.addChild(reel);
-        }
+    for (let i = 0; i < this.reels.length; i++) {
+      const column = board[i];
+      if (!column || column.length !== visibleRows) {
+        console.warn(
+          `[SlotMachine] Invalid column ${i}: expected ${visibleRows} rows, got ${column?.length ?? 0}`,
+        );
+        continue;
+      }
+      this.reels[i].setResult([...column]);
     }
 
-    spin() {
+    this.stopIndex = 0;
+    this.stopTimer = 0;
+    this.stopping = true;
+  }
+
+  update(delta: number): void {
+    for (const reel of this.reels) {
+      reel.update(delta);
+    }
+
+    if (!this.stopping) return;
+
+    this.stopTimer += delta;
+
+    if (this.stopTimer >= SLOT_CONFIG.stopDelay) {
+      this.stopTimer = 0;
+
+      if (this.stopIndex < this.reels.length) {
+        this.reels[this.stopIndex].stop();
+        this.stopIndex++;
+      } else {
         this.stopping = false;
-        this.stopIndex = 0;
-        this.stopTimer = 0;
-
-        for (const reel of this.reels) {
-            reel.spin();
-        }
+      }
     }
+  }
 
-    setResult(board: number[][]) {
-        for (let i = 0; i < this.reels.length; i++) {
-            this.reels[i].setResult(board[i]);
-        }
-
-        this.stopIndex = 0;
-        this.stopTimer = 0;
-        this.stopping = true;
+  override destroy(options?: PIXI.DestroyOptions | boolean): void {
+    for (const reel of this.reels) {
+      reel.destroy(options);
     }
-
-    update(delta: number) {
-        for (const reel of this.reels) {
-            reel.update(delta);
-        }
-
-        if (!this.stopping) return;
-
-        this.stopTimer += delta;
-
-        if (this.stopTimer >= this.stopDelay) {
-            this.stopTimer = 0;
-
-            if (this.stopIndex < this.reels.length) {
-                this.reels[this.stopIndex].stop();
-
-                this.stopIndex++;
-            } else {
-                this.stopping = false;
-            }
-        }
-    }
+    this.reels = [];
+    super.destroy(options);
+  }
 }
