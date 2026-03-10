@@ -4,6 +4,7 @@ import { Symbol } from './Symbol';
 
 export class Reel extends PIXI.Container {
     private symbols: Symbol[] = []
+    private targetSymbols: number[] = [];
 
     private symbolContainer = new PIXI.Container();
 
@@ -12,6 +13,7 @@ export class Reel extends PIXI.Container {
 
     private speed = 0;
     private spinning = false;
+    private shouldStop = false;
 
     constructor(rows: number, symbolSize: number) {
         super();
@@ -27,8 +29,8 @@ export class Reel extends PIXI.Container {
     }
 
     private createMask() {
-        const width = this.symbolSize;
-        const height = this.rows * this.symbolSize - 410;
+        const width = this.symbolSize + 30;
+        const height = this.rows * this.symbolSize - 405;
 
         // Crear textura con gradiente difuminado (transparente arriba y abajo)
         const canvas = document.createElement('canvas');
@@ -49,7 +51,7 @@ export class Reel extends PIXI.Container {
         const texture = PIXI.Texture.from(canvas);
         const mask = new PIXI.Sprite(texture);
         mask.x = 0;
-        mask.y = 390;
+        mask.y = 410;
 
         this.addChild(mask);
 
@@ -64,7 +66,7 @@ export class Reel extends PIXI.Container {
 
             symbol.y = i * this.symbolSize;
 
-            symbol.scale.set(0.25);
+            symbol.scale.set(0.28);
 
             this.symbols.push(symbol);
 
@@ -75,20 +77,43 @@ export class Reel extends PIXI.Container {
     spin() {
         // 3000 para que se vea el efecto real de la ruleta
         // 100 para testear movimiento
-        this.speed = 100;
-        
+        this.speed = 3000;
         this.spinning = true;
+    }
+
+    setResult(symbols: number[]) {
+        this.targetSymbols = symbols;
+    }
+
+    stop() {
+        this.shouldStop = true;
     }
 
     update(delta: number) {
         if (!this.spinning) return;
 
-        for (const symbol of this.symbols) {
+        for (let i = 0; i < this.symbols.length; i++) {
+            const symbol = this.symbols[i];
             symbol.y += this.speed * delta;
 
-            if (symbol.y >= this.symbolSize * this.rows) {
+            if (symbol.y >= this.symbolSize * this.symbols.length) {
                 symbol.y -= this.symbolSize * this.symbols.length;
-                symbol.setRandom();
+
+                // Si el reel debe detenerse
+                if (this.shouldStop && this.targetSymbols.length) {
+                    if (i < this.targetSymbols.length) {
+                        symbol.setSymbol(this.targetSymbols[i]);
+                    }
+
+                    // cuando el último símbolo visible entra → parar reel
+                    if (i === this.targetSymbols.length - 1) {
+                        this.spinning = false;
+                        this.shouldStop = false;
+                        this.speed = 0;
+                    }
+                } else {
+                    symbol.setRandom();
+                }
             }
         }
     }

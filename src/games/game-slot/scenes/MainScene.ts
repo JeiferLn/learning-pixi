@@ -38,12 +38,26 @@ export class MainScene extends BaseScene {
         // Slot Machine
         this.slotMachine = new SlotMachine();
 
-        this.slotMachine.pivot.set(592.5, 730);
+        this.slotMachine.pivot.set(605, 750);
         this.slotMachine.position.set(this.gameWidth / 2, this.gameHeight / 2);
 
         this.addChild(this.slotMachine);
 
         this.slotMachine.spin();
+
+        setTimeout(() => {
+
+            const result = [
+                [0, 4, 4],
+                [2, 3, 4],
+                [10, 2, 4],
+                [11, 10, 4],
+                [4, 13, 8]
+            ];
+
+            this.slotMachine.setResult(result);
+
+        }, 3000);
     }
 
     update(delta: number) {
