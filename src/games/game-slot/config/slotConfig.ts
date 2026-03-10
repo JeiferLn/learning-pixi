@@ -16,3 +16,12 @@ export const SLOT_CONFIG = {
 
 /** Resultado del tablero: array de columnas, cada columna tiene visibleRows símbolos por ID */
 export type BoardResult = readonly (readonly number[])[];
+
+/** Respuesta esperada del backend al girar */
+export interface SpinResponse {
+  board: number[][];
+  reward: {
+    streaks: number[][][];
+    total_reward: string;
+  };
+}

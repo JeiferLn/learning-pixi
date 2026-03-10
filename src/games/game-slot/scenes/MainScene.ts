@@ -1,6 +1,6 @@
 import * as PIXI from 'pixi.js';
 
-import { SLOT_CONFIG } from '../config/slotConfig';
+import { SLOT_CONFIG, type SpinResponse } from '../config/slotConfig';
 import { SlotMachine } from '../slot';
 import { GameUI } from '../ui/GameUI';
 import { BaseScene } from './BaseScene';
@@ -61,17 +61,37 @@ export class MainScene extends BaseScene {
         this.gameUI.setSpinEnabled(false);
         this.slotMachine.spin();
 
-        // TODO: Reemplazar con respuesta real del backend
-        setTimeout(() => {
-            const result = [
+        // TODO: Reemplazar con fetch real al backend
+        this.simulateSpinResponse();
+    }
+
+    private simulateSpinResponse(): void {
+        const mockResponse: SpinResponse = {
+            board: [
                 [0, 4, 4],
                 [2, 3, 4],
                 [10, 2, 4],
                 [11, 10, 4],
                 [4, 13, 8],
-            ];
-            this.slotMachine.setResult(result);
-        }, 3000);
+            ],
+            reward: {
+                streaks: [
+                    [
+                        [0, 0, 1],
+                        [0, 0, 1],
+                        [0, 0, 1],
+                        [0, 0, 1],
+                        [0, 0, 0],
+                    ],
+                ],
+                total_reward: '10000 COP',
+            },
+        };
+
+        setTimeout(() => {
+            this.slotMachine.setResult(mockResponse.board);
+            // mockResponse.reward disponible para mostrar ganancias, etc.
+        }, 2000);
     }
 
     update(delta: number) {
