@@ -32,4 +32,12 @@ export const SLOT_LAYOUT_CONFIG = {
    */
   injectionZoneTop: 307.5,
   injectionZoneBottom: 410,
+  /** Animación: impulso inicial al arrancar (velocidad px/s hacia arriba, negativos) */
+  spinStartKick: -600,
+  /** Animación: duración del impulso arranque (segundos) */
+  spinStartKickDuration: 0.5,
+  /** Animación: overshoot al parar (px) */
+  spinStopOvershoot: 200,
+  /** Animación: duración del bounce al parar (segundos) */
+  spinStopBounceDuration: 0.5,
 } as const;
