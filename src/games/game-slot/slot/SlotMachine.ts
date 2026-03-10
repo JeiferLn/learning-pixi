@@ -2,6 +2,7 @@ import * as PIXI from 'pixi.js';
 
 import { SLOT_CONFIG, type BoardResult } from '../config/slotConfig';
 import { Reel } from './Reel';
+import { SlotAssets } from './SlotAssets';
 
 export class SlotMachine extends PIXI.Container {
   private reels: Reel[] = [];
@@ -18,9 +19,10 @@ export class SlotMachine extends PIXI.Container {
   private createReels(): void {
     const { visibleRows, totalReels, symbolSize, reelSpacing } = SLOT_CONFIG;
     const bufferRows = 2;
+    const maskTexture = SlotAssets.getReelMaskTexture();
 
     for (let i = 0; i < totalReels; i++) {
-      const reel = new Reel(visibleRows + bufferRows, symbolSize);
+      const reel = new Reel(visibleRows + bufferRows, symbolSize, maskTexture);
       reel.x = i * (symbolSize + reelSpacing);
       this.reels.push(reel);
       this.addChild(reel);
@@ -89,6 +91,7 @@ export class SlotMachine extends PIXI.Container {
       reel.destroy(options);
     }
     this.reels = [];
+    SlotAssets.destroyReelMaskTexture();
     super.destroy(options);
   }
 }

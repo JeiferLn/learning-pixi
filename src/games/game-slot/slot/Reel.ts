@@ -22,7 +22,7 @@ export class Reel extends PIXI.Container {
   private shouldStop = false;
   private injectedMask = 0; // bitmask: 1<<i si ya inyectamos targetSymbols[i]
 
-  constructor(rows: number, symbolSize: number) {
+  constructor(rows: number, symbolSize: number, maskTexture: PIXI.Texture) {
     super();
 
     this.rows = rows;
@@ -30,32 +30,15 @@ export class Reel extends PIXI.Container {
     this.visibleRows = SLOT_CONFIG.visibleRows;
     this.totalHeight = rows * symbolSize;
 
-    this.createMask();
+    this.createMask(maskTexture);
     this.addChild(this.symbolContainer);
     this.createSymbols();
   }
 
-  private createMask(): void {
-    const { visibleArea, maskWidthPadding } = SLOT_CONFIG;
-    const width = this.symbolSize + maskWidthPadding;
-    const height = visibleArea.height;
+  private createMask(maskTexture: PIXI.Texture): void {
+    const { visibleArea } = SLOT_CONFIG;
 
-    const canvas = document.createElement('canvas');
-    canvas.width = width;
-    canvas.height = height;
-    const ctx = canvas.getContext('2d')!;
-
-    const gradient = ctx.createLinearGradient(0, 0, 0, height);
-    gradient.addColorStop(0, 'rgba(255,255,255,0)');
-    gradient.addColorStop(0.02, 'rgba(255,255,255,1)');
-    gradient.addColorStop(0.98, 'rgba(255,255,255,1)');
-    gradient.addColorStop(1, 'rgba(255,255,255,0)');
-
-    ctx.fillStyle = gradient;
-    ctx.fillRect(0, 0, width, height);
-
-    const texture = PIXI.Texture.from(canvas);
-    this.maskSprite = new PIXI.Sprite(texture);
+    this.maskSprite = new PIXI.Sprite(maskTexture);
     this.maskSprite.x = 0;
     this.maskSprite.y = visibleArea.top;
 
@@ -209,9 +192,7 @@ export class Reel extends PIXI.Container {
   }
 
   override destroy(options?: PIXI.DestroyOptions | boolean): void {
-    if (this.maskSprite?.texture) {
-      this.maskSprite.texture.destroy(true);
-    }
+    // No destruir texture: es compartida por SlotAssets
     this.maskSprite = null;
     this.symbolContainer.mask = null;
     this.symbols = [];
