@@ -8,8 +8,8 @@ export class SlotMachine extends PIXI.Container {
     private rows = 3;
     private cols = 5;
 
-    private symbolSize = 210;
-    private reelSpacing = 32;
+    private symbolSize = 205;
+    private reelSpacing = 38;
 
     private stopIndex = 0;
     private stopTimer = 0;
