@@ -44,6 +44,7 @@ export class MainScene extends BaseScene {
         this.slotMachine = new SlotMachine({
             onSpinComplete: () => {
                 this.isSpinning = false;
+                this.gameUI.setSpinEnabled(true);
             },
         });
         this.slotMachine.pivot.set(
@@ -108,6 +109,7 @@ export class MainScene extends BaseScene {
             clearTimeout(this.spinTimeoutId);
             this.spinTimeoutId = null;
         }
+        this.gameUI.setSpinEnabled(false);
         this.slotMachine.setResult(this.MOCK_RESPONSE.board, {
             forceStopAll: true,
         });
@@ -117,5 +119,6 @@ export class MainScene extends BaseScene {
         if (!this.slotMachine) return;
 
         this.slotMachine.update(delta);
+        this.gameUI.update(delta);
     }
 }

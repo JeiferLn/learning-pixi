@@ -2,9 +2,15 @@ import * as PIXI from 'pixi.js';
 
 import { SLOT_CONFIG } from '../config/slotConfig';
 
+const DISABLED_OVERLAY_ALPHA = 0.5;
+const TRANSITION_SPEED = 8;
+
 export class GameUI extends PIXI.Container {
   private spinButton: PIXI.Graphics;
   private onSpinClick: () => void;
+  private isEnabled = true;
+  private currentOverlayAlpha = 0;
+  private targetOverlayAlpha = 0;
   private readonly buttonRadius: number;
 
   constructor(
@@ -46,8 +52,33 @@ export class GameUI extends PIXI.Container {
   }
 
   private readonly handleSpinClick = (): void => {
+    if (!this.isEnabled) return;
     this.onSpinClick();
   };
+
+  setSpinEnabled(enabled: boolean): void {
+    this.isEnabled = enabled;
+    this.spinButton.eventMode = enabled ? 'static' : 'none';
+    this.spinButton.cursor = enabled ? 'pointer' : 'default';
+    this.targetOverlayAlpha = enabled ? 0 : DISABLED_OVERLAY_ALPHA;
+  }
+
+  update(delta: number): void {
+    const diff = this.targetOverlayAlpha - this.currentOverlayAlpha;
+    if (Math.abs(diff) < 0.001) return;
+
+    this.currentOverlayAlpha += diff * Math.min(1, delta * TRANSITION_SPEED);
+    this.updateOverlay();
+  }
+
+  private updateOverlay(): void {
+    const r = this.buttonRadius;
+    this.spinButton.clear();
+    this.spinButton.circle(r, r, r).fill({
+      color: this.currentOverlayAlpha > 0 ? 0x000000 : 0xffffff,
+      alpha: this.currentOverlayAlpha,
+    });
+  }
 
   override destroy(options?: PIXI.DestroyOptions | boolean): void {
     this.spinButton.off('pointerdown', this.handleSpinClick);
